@@ -1,0 +1,80 @@
+{
+  "manifest_version": "1.0",
+  "snapshot_date": "2026-09-20",
+  "note": "Råfilerne er faste undervisningssnapshots og må ikke redigeres.",
+  "sources": {
+    "realtime": {
+      "dataset": "ElectricityProdex5MinRealtime",
+      "metadata_url": "https://api.energidataservice.dk/meta/dataset/ElectricityProdex5MinRealtime"
+    },
+    "settlement": {
+      "dataset": "ProductionConsumptionSettlement",
+      "metadata_url": "https://api.energidataservice.dk/meta/dataset/ProductionConsumptionSettlement"
+    }
+  },
+  "periods": {
+    "january": {
+      "label": "Januar 2026",
+      "realtime_file": "realtime_2026-01.json",
+      "realtime_rows": 17850,
+      "settlement_file": "settlement_2026-01.json",
+      "settlement_rows": 1488
+    },
+    "june": {
+      "label": "Juni 2026",
+      "realtime_file": "realtime_2026-06.json",
+      "realtime_rows": 17258,
+      "settlement_file": "settlement_2026-06.json",
+      "settlement_rows": 1440
+    },
+    "dst": {
+      "label": "28.–30. marts 2026 omkring sommertidsskiftet",
+      "realtime_file": "realtime_dst_2026-03-28_31.json",
+      "realtime_rows": 1704,
+      "settlement_file": "settlement_dst_2026-03-28_31.json",
+      "settlement_rows": 142
+    }
+  },
+  "files": {
+    "meta_realtime.json": {
+      "bytes": 9142,
+      "rows": 0,
+      "sha256": "3634ac3f59c3c8eaa3582954e243d6284f1acae2813251d25b402390397e2930"
+    },
+    "meta_settlement.json": {
+      "bytes": 15437,
+      "rows": 0,
+      "sha256": "03b29e17a841e95feb8c4aee625bbcb6a3014ffa94bc1b7b91aaf04a9bdee254"
+    },
+    "realtime_2026-01.json": {
+      "bytes": 7756186,
+      "rows": 17850,
+      "sha256": "b94a7e7eea1433aaf0d535028941672fa0dad3f9c6bf1901dfbb11c2447cb440"
+    },
+    "realtime_2026-06.json": {
+      "bytes": 7475217,
+      "rows": 17258,
+      "sha256": "83a8da1d93cf2ff4df295e80d1add76005d2050501deb8c839dfc1f9d84dcfde"
+    },
+    "realtime_dst_2026-03-28_31.json": {
+      "bytes": 741582,
+      "rows": 1704,
+      "sha256": "cc23b9da25495be2e263abe7414fc4db64e5ce806df4f05bb2dbf7d7a3e182cd"
+    },
+    "settlement_2026-01.json": {
+      "bytes": 1294081,
+      "rows": 1488,
+      "sha256": "37d663f33f4bdf2cc97bde29c0fd8210ad3b1ffae303fb7c95572756b2229a58"
+    },
+    "settlement_2026-06.json": {
+      "bytes": 1249729,
+      "rows": 1440,
+      "sha256": "e3b951902f2fe2dc3390cb920cb7885f7890025e8622aecbaf30ee98c91a274e"
+    },
+    "settlement_dst_2026-03-28_31.json": {
+      "bytes": 123700,
+      "rows": 142,
+      "sha256": "8c2a310cca3f0a9cfe2e51b68400beb86390aaedd9f0baa4a5bafff4b0f74dfb"
+    }
+  }
+}
