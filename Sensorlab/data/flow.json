@@ -1,0 +1,68 @@
+{
+  "example": true,
+  "unit": "litre/minute",
+  "interval_minutes": 10,
+  "meaning": "Interval average; timestamp marks start",
+  "records": [
+    {
+      "timestamp": "2026-01-12T08:00:00Z",
+      "device": "A",
+      "flow_l_min": 10
+    },
+    {
+      "timestamp": "2026-01-12T08:10:00Z",
+      "device": "A",
+      "flow_l_min": 10
+    },
+    {
+      "timestamp": "2026-01-12T08:20:00Z",
+      "device": "A",
+      "flow_l_min": 10
+    },
+    {
+      "timestamp": "2026-01-12T08:30:00Z",
+      "device": "A",
+      "flow_l_min": 10
+    },
+    {
+      "timestamp": "2026-01-12T08:40:00Z",
+      "device": "A",
+      "flow_l_min": 10
+    },
+    {
+      "timestamp": "2026-01-12T08:50:00Z",
+      "device": "A",
+      "flow_l_min": 10
+    },
+    {
+      "timestamp": "2026-01-12T08:00:00Z",
+      "device": "B",
+      "flow_l_min": 20
+    },
+    {
+      "timestamp": "2026-01-12T08:10:00Z",
+      "device": "B",
+      "flow_l_min": 20
+    },
+    {
+      "timestamp": "2026-01-12T08:20:00Z",
+      "device": "B",
+      "flow_l_min": 20
+    },
+    {
+      "timestamp": "2026-01-12T08:30:00Z",
+      "device": "B",
+      "flow_l_min": 20
+    },
+    {
+      "timestamp": "2026-01-12T08:40:00Z",
+      "device": "B",
+      "flow_l_min": 20
+    },
+    {
+      "timestamp": "2026-01-12T08:50:00Z",
+      "device": "B",
+      "flow_l_min": null
+    }
+  ]
+}

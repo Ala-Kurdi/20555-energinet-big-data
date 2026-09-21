@@ -1,0 +1,32 @@
+{
+  "steps": [
+    {
+      "id": "read",
+      "needs": []
+    },
+    {
+      "id": "validate",
+      "needs": [
+        "read"
+      ]
+    },
+    {
+      "id": "aggregate",
+      "needs": [
+        "validate"
+      ]
+    },
+    {
+      "id": "join",
+      "needs": [
+        "aggregate"
+      ]
+    },
+    {
+      "id": "write",
+      "needs": [
+        "join"
+      ]
+    }
+  ]
+}
