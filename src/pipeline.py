@@ -10,6 +10,8 @@ from contracts import (
     EXPECTED_PRICE_AREAS,
     MINIMUM_ANALYSIS_COLUMNS,
     PERIODS,
+    REALTIME_EXTERNAL_EXCHANGE_COLUMNS,
+    REALTIME_PRODUCTION_COLUMNS,
     REALTIME_REQUIRED_COLUMNS,
     SETTLEMENT_REQUIRED_COLUMNS,
 )
@@ -58,13 +60,62 @@ def validate_snapshot(
     - kontrollér dubletter på timestamp + PriceArea;
     - returnér en kopi med den konverterede timestampkolonne.
     """
-    raise NextTodo("NÆSTE TODO 1: Implementér validate_snapshot().")
 
+    missing = sorted(set(required_columns) - set(frame.columns))
+    if missing:
+        raise ValueError(
+            f"{label}: mangler obligatoriske kolonner: {missing}"
+        )
+
+    df = frame.copy()
+
+    try:
+        df[timestamp_column] = pd.to_datetime(
+            df[timestamp_column],
+            utc=True,
+            errors="raise",
+        )
+    except (ValueError, TypeError) as exc:
+        raise ValueError(
+            f"{label}: ugyldig timestamp i {timestamp_column}"
+        ) from exc
+
+    invalid_price_areas = (
+        set(df["PriceArea"].dropna()) - set(EXPECTED_PRICE_AREAS)
+    )
+
+    if invalid_price_areas:
+        raise ValueError(
+            f"{label}: ugyldige PriceArea-værdier: "
+            f"{sorted(invalid_price_areas)}"
+        )
+
+    if df["PriceArea"].isna().any():
+        raise ValueError(
+            f"{label}: PriceArea må ikke mangle"
+        )
+
+    duplicates = df.duplicated(
+        subset=[timestamp_column, "PriceArea"],
+        keep=False,
+    )
+
+    if duplicates.any():
+        raise ValueError(
+            f"{label}: dubletter på {timestamp_column} + PriceArea"
+        )
+
+    return df
 
 def mw_to_mwh(values: pd.Series, interval_minutes: int = 5) -> pd.Series:
     """TODO 2: Konvertér gennemsnitlig effekt til energi for intervallet."""
-    raise NextTodo("NÆSTE TODO 2: Implementér mw_to_mwh().")
 
+    numeric = pd.to_numeric(values, errors="raise")
+
+    if interval_minutes <= 0:
+        raise ValueError("Intervallet skal være større end 0 minutter.")
+
+    return numeric * (interval_minutes / 60)
 
 def prepare_realtime(frame: pd.DataFrame) -> pd.DataFrame:
     """TODO 3: Skab én realtime-række pr. UTC-time og prisområde.
@@ -78,8 +129,62 @@ def prepare_realtime(frame: pd.DataFrame) -> pd.DataFrame:
 
     Husk at omregne hvert interval før summering.
     """
-    raise NextTodo("NÆSTE TODO 3: Implementér prepare_realtime().")
 
+    df = frame.copy()
+
+    df["hour_utc"] = df["Minutes5UTC"].dt.floor("h")
+
+    df["offshore_mwh"] = mw_to_mwh(df["OffshoreWindPower"])
+    df["onshore_mwh"] = mw_to_mwh(df["OnshoreWindPower"])
+    df["solar_mwh"] = mw_to_mwh(df["SolarPower"])
+
+    external_exchange_mw = df[REALTIME_EXTERNAL_EXCHANGE_COLUMNS].sum(
+        axis=1,
+        min_count=1,
+    )
+
+    df["external_exchange_mwh"] = mw_to_mwh(external_exchange_mw)
+
+    df["load_balance_mwh"] = (
+        df["external_exchange_mwh"]
+        + mw_to_mwh(df["ExchangeGreatBelt"])
+    )
+
+    df["negative_production_interval"] = (
+        df[REALTIME_PRODUCTION_COLUMNS].lt(0).any(axis=1)
+    )
+
+    print(
+        df[
+            [
+                "Minutes5UTC",
+                "PriceArea",
+                "offshore_mwh",
+                "external_exchange_mwh",
+                "load_balance_mwh",
+                "negative_production_interval",
+            ]
+        ].head()
+    )
+
+    hourly = (
+        df.groupby(["hour_utc", "PriceArea"], as_index=False)
+        .agg(
+            rt_interval_count=("Minutes5UTC", "nunique"),
+            rt_offshore_wind_mwh=("offshore_mwh", "sum"),
+            rt_onshore_wind_mwh=("onshore_mwh", "sum"),
+            rt_solar_mwh=("solar_mwh", "sum"),
+            rt_external_exchange_mwh=("external_exchange_mwh", "sum"),
+            rt_load_balance_mwh=("load_balance_mwh", "sum"),
+            rt_negative_production_intervals=(
+                "negative_production_interval",
+                "sum",
+            ),
+        )
+        .rename(columns={"PriceArea": "price_area"})
+    )
+
+    return hourly
 
 def prepare_settlement(frame: pd.DataFrame) -> pd.DataFrame:
     """TODO 4: Skab sammenligningsfelter i afregningsdata.
