@@ -154,19 +154,6 @@ def prepare_realtime(frame: pd.DataFrame) -> pd.DataFrame:
         df[REALTIME_PRODUCTION_COLUMNS].lt(0).any(axis=1)
     )
 
-    print(
-        df[
-            [
-                "Minutes5UTC",
-                "PriceArea",
-                "offshore_mwh",
-                "external_exchange_mwh",
-                "load_balance_mwh",
-                "negative_production_interval",
-            ]
-        ].head()
-    )
-
     hourly = (
         df.groupby(["hour_utc", "PriceArea"], as_index=False)
         .agg(
@@ -196,7 +183,62 @@ def prepare_settlement(frame: pd.DataFrame) -> pd.DataFrame:
     - udenlandsk udveksling uden Storebælt;
     - gross consumption.
     """
-    raise NextTodo("NÆSTE TODO 4: Implementér prepare_settlement().")
+    df = frame.copy()
+
+    # Tid og prisområde
+    df["hour_utc"] = df["HourUTC"]
+    df["hour_dk"] = df["HourDK"]
+    df["price_area"] = df["PriceArea"]
+
+    # Vindproduktion
+    df["st_offshore_wind_mwh"] = (
+        df["OffshoreWindLt100MW_MWh"]
+        + df["OffshoreWindGe100MW_MWh"]
+    )
+
+    df["st_onshore_wind_mwh"] = (
+        df["OnshoreWindLt50kW_MWh"]
+        + df["OnshoreWindGe50kW_MWh"]
+    )
+
+    # Solproduktion uden self-consumption
+    df["st_solar_grid_mwh"] = (
+        df["SolarPowerLt10kW_MWh"]
+        + df["SolarPowerGe10Lt40kW_MWh"]
+        + df["SolarPowerGe40kW_MWh"]
+    )
+
+    # Solproduktion inklusive self-consumption
+    df["st_solar_all_mwh"] = (
+        df["st_solar_grid_mwh"]
+        + df["SolarPowerSelfConMWh"]
+    )
+
+    # Udenlandsk udveksling uden Storebælt
+    df["st_external_exchange_mwh"] = (
+        df["ExchangeNO_MWh"]
+        + df["ExchangeSE_MWh"]
+        + df["ExchangeGE_MWh"]
+        + df["ExchangeNL_MWh"]
+        + df["ExchangeGB_MWh"]
+    )
+
+    # Bruttoforbrug
+    df["st_gross_consumption_mwh"] = df["GrossConsumptionMWh"]
+
+    return df[
+        [
+            "hour_utc",
+            "hour_dk",
+            "price_area",
+            "st_offshore_wind_mwh",
+            "st_onshore_wind_mwh",
+            "st_solar_grid_mwh",
+            "st_solar_all_mwh",
+            "st_external_exchange_mwh",
+            "st_gross_consumption_mwh",
+        ]
+    ].copy()
 
 
 def join_and_flag(realtime: pd.DataFrame, settlement: pd.DataFrame) -> pd.DataFrame:
@@ -206,8 +248,44 @@ def join_and_flag(realtime: pd.DataFrame, settlement: pd.DataFrame) -> pd.DataFr
     Bevar mindst flag for joinstatus og præcis 12 realtime-intervaller.
     Tilføj gerne negative værdier, frosne tilstande og metadataadvarsler.
     """
-    raise NextTodo("NÆSTE TODO 5: Implementér join_and_flag().")
+    joined = realtime.merge(
+        settlement,
+        on=["hour_utc", "price_area"],
+        how="outer",
+        validate="one_to_one",
+        indicator=True,
+    )
 
+    # Join-kvalitet: findes rækken i begge datasæt?
+    joined["quality_join_matched"] = joined["_merge"].eq("both")
+
+    # Realtime-kvalitet: har timen præcis 12 fem-minutters intervaller?
+    joined["quality_rt_complete_hour"] = (
+        joined["rt_interval_count"].eq(EXPECTED_INTERVALS_PER_HOUR)
+    )
+
+    def build_issue_codes(row: pd.Series) -> str:
+        issues = []
+
+        if not row["quality_join_matched"]:
+            issues.append("JOIN_MISSING")
+
+        if not row["quality_rt_complete_hour"]:
+            issues.append("RT_INCOMPLETE")
+
+        if row.get("rt_negative_production_intervals", 0) > 0:
+            issues.append("NEGATIVE_PRODUCTION")
+
+        return ";".join(issues)
+
+    joined["quality_issue_codes"] = joined.apply(
+        build_issue_codes,
+        axis=1,
+    )
+
+    joined = joined.drop(columns=["_merge"])
+
+    return joined
 
 def create_quality_summary(analysis_ready: pd.DataFrame) -> dict:
     """TODO 6: Lav en lille maskinlæsbar rapport med tællinger.
@@ -215,7 +293,36 @@ def create_quality_summary(analysis_ready: pd.DataFrame) -> dict:
     Medtag mindst samlet rækkeantal, joinstatus, fulde/ufuldstændige timer
     og antal rækker med hvert kvalitetsflag.
     """
-    raise NextTodo("NÆSTE TODO 6: Implementér create_quality_summary().")
+    total_rows = len(analysis_ready)
+
+    matched_rows = int(
+        analysis_ready["quality_join_matched"].sum()
+    )
+
+    complete_hours = int(
+        analysis_ready["quality_rt_complete_hour"].sum()
+    )
+
+    summary = {
+        "total_rows": total_rows,
+        "join_matched": matched_rows,
+        "join_missing": total_rows - matched_rows,
+        "rt_complete_hours": complete_hours,
+        "rt_incomplete_hours": total_rows - complete_hours,
+    }
+
+    issue_counts: dict[str, int] = {}
+
+    for codes in analysis_ready["quality_issue_codes"]:
+        if not codes:
+            continue
+
+        for code in codes.split(";"):
+            issue_counts[code] = issue_counts.get(code, 0) + 1
+
+    summary["issue_counts"] = issue_counts
+
+    return summary
 
 
 def write_outputs(
