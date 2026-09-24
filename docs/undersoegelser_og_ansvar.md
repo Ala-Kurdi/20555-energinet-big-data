@@ -166,3 +166,33 @@ Uanset platform skal det være tydeligt, hvem der har ansvar for data, adgang, b
 
 Energinet-dataene i denne case er data på prisområdeniveau og identificerer ikke i sig selv personer. Det betyder dog ikke, at alle energidata generelt er uden persondata. Hvis et andet system indeholder oplysninger om enkelte kunder eller husstande, skal persondata og adgang vurderes særskilt.
 
+
+
+
+
+Antagelser og begrænsninger
+
+
+
+Jeg arbejder med faste snapshots fra januar, juni og DST-perioden i 2026. Resultaterne kan derfor ikke automatisk bruges til at beskrive alle perioder eller hele Energinets datasæt.
+
+
+
+Jeg bruger UTC som teknisk nøgle ved timeaggregation og join, mens dansk tid bevares til fortolkning.
+
+
+
+En komplet realtime-time betyder i min pipeline, at der findes præcis 12 fem-minutters intervaller. Det betyder ikke automatisk, at værdierne er korrekte eller ligger tæt på afregningsdata.
+
+
+
+Afregningsdata bruges som sammenligningsgrundlag, men betragtes ikke som et perfekt facit. Data kan blive opdateret senere.
+
+
+
+Manglende værdier bliver ikke automatisk erstattet med nul, fordi en manglende værdi ikke nødvendigvis betyder nul.
+
+
+
+Kvalitetsflag viser mistænkelige eller ufuldstændige data. Nogle problemer kan findes med regler, mens den endelige fortolkning kan kræve metadata eller domæneviden.
+
